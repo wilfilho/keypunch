@@ -1,41 +1,43 @@
 package com.wilfilho.keypunch.manager
 
-import android.annotation.TargetApi
 import android.app.Activity
 import android.graphics.Point
 import android.graphics.Rect
-import android.os.Build
 import android.util.DisplayMetrics
 import android.view.Display
 import android.view.View
+import com.wilfilho.keypunch.dimensions.NotchDimension
 
 /**
  * Created by Wilson Martins on 2019-10-25.
  */
 
-interface DeviceDimesions {
+internal interface KeyboardHeightProcessor {
     fun keyboardHeight(): Int
 
     fun getRealDeviceHeight(): Int
 
     fun getNavigationBarHeight(): Int
+
+    fun getNotchHeight(): Int
 }
 
-class DeviceDimesionsImpl(
+internal class KeyboardHeightProcessorImpl(
     private val activity: Activity,
     private val keyboardView: View
-) : DeviceDimesions {
+) : KeyboardHeightProcessor {
+    override fun getNotchHeight(): Int {
+        val notchHeight = NotchDimension(activity)
+        return notchHeight.height()
+    }
+
     override fun keyboardHeight(): Int {
         val keyboardRect = Rect()
         keyboardView.getWindowVisibleDisplayFrame(keyboardRect)
         val realHeight = getRealDeviceHeight()
-        val phisicalNavigationButton = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            getNavigationBarHeight()
-        } else {
-            0
-        }
+        val phisicalNavigationButton = getNavigationBarHeight()
 
-        return (realHeight - keyboardRect.bottom) - phisicalNavigationButton
+        return ((realHeight - keyboardRect.bottom) - phisicalNavigationButton) + getNotchHeight()
     }
 
     override fun getRealDeviceHeight(): Int {
@@ -45,7 +47,6 @@ class DeviceDimesionsImpl(
         return dimensoesReais.y
     }
 
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     override fun getNavigationBarHeight(): Int {
         val metrics = DisplayMetrics()
         activity.windowManager.defaultDisplay.getMetrics(metrics)
